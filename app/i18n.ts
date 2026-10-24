@@ -2,8 +2,7 @@ export type Lang = 'en' | 'fr' | 'ar';
 
 export const TRANSLATIONS = {
   en: {
-    appTitle: 'Human Atlas',
-    edition: '3D',
+    appTitle: 'Atlas',
     modeledPieces: 'modeled pieces',
     sourceCredit: 'BodyParts3D',
     findStructure: 'Find a structure',
@@ -57,8 +56,7 @@ export const TRANSLATIONS = {
     sourcePublication: 'Read the source publication',
   },
   fr: {
-    appTitle: 'Atlas Humain',
-    edition: '3D',
+    appTitle: 'Atlas',
     modeledPieces: 'pièces modélisées',
     sourceCredit: 'BodyParts3D',
     findStructure: 'Rechercher une structure',
@@ -112,8 +110,7 @@ export const TRANSLATIONS = {
     sourcePublication: 'Lire la publication source',
   },
   ar: {
-    appTitle: 'الأطلس البشري',
-    edition: 'ثلاثي الأبعاد',
+    appTitle: 'أطلس',
     modeledPieces: 'قطعة مصممة',
     sourceCredit: 'BodyParts3D',
     findStructure: 'البحث عن هيكل',

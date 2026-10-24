@@ -1,7 +1,7 @@
 import {flushSync} from 'react-dom';
 import {registerAtlasTools} from './agent-tools';
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {Activity,ArrowUpRight,ChevronRight,Focus,Info,Layers3,Pause,RotateCcw,RotateCw,Search,X,Globe} from 'lucide-react';
+import {Activity,ArrowUpRight,ChevronRight,Focus,Info,Layers3,Pause,RotateCcw,RotateCw,Search,X} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
 import {Slider} from '@/components/ui/slider';
@@ -125,8 +125,7 @@ export default function Home(){
    <div className="vignette"/>
    
    <header className="identity">
-    <div className="eyebrow"><span className="status-dot"/> {lang==='ar'?'التشريح التفاعلي':lang==='fr'?'ANATOMIE INTERACTIVE':'INTERACTIVE ANATOMY'}</div>
-    <h1>{t.appTitle}<Badge variant="outline" className="edition">{t.edition}</Badge></h1>
+    <h1>{t.appTitle}</h1>
     <div className="identity-meta">{atlas?atlas.parts.length.toLocaleString():'2,234'} {t.modeledPieces} <span>·</span> {t.sourceCredit}</div>
    </header>
 
