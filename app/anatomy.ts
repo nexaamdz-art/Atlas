@@ -1,4 +1,7 @@
+import { Lang, SYSTEM_TRANSLATIONS, EXPLANATION_TRANSLATIONS } from './i18n';
+
 export type SystemId = 'skeletal'|'muscular'|'arterial'|'venous'|'nervous'|'digestive'|'respiratory'|'urinary'|'reproductive'|'lymphatic'|'endocrine'|'integumentary'|'connective'|'sensory'|'cardiac';
+
 export const SYSTEMS: {id:SystemId;name:string;color:string;description:string}[] = [
  {id:'skeletal',name:'Skeleton',color:'#e2d9ba',description:'Bones form the supporting framework of the body, protect organs, and provide attachment points for muscles. Their internal tissue also stores minerals and produces blood cells.'},
  {id:'muscular',name:'Muscles',color:'#a85b50',description:'Skeletal muscles generate movement by pulling on their attachments. Together with tendons, they move joints, stabilize posture, and produce heat.'},
@@ -16,21 +19,76 @@ export const SYSTEMS: {id:SystemId;name:string;color:string;description:string}[
  {id:'integumentary',name:'Body surface',color:'#ba9b7d',description:'The body surface provides an outer anatomical reference. The integumentary system forms a protective barrier and contributes to sensation and temperature regulation.'},
  {id:'connective',name:'Connective tissue',color:'#aec3bb',description:'Cartilage, ligaments, and other connective tissues support, connect, and separate structures. Their roles include stabilizing joints and distributing mechanical loads.'},
 ];
-export interface Part {id:string;name:string;conceptId:string;system:SystemId;chunk:number;positions:number;normals:number;indices:number;vertexCount:number;indexCount:number;bounds:[number[],number[]]}
-export interface Concept {id:string;name:string;elements:string[]}
-export interface Atlas {version:string;sex?:'male';source?:string;scope?:string;parts:Part[];concepts:Concept[];chunks:{url:string;bytes:number;gzip?:string;gzipBytes?:number}[];triangles:number}
+
+export interface Part {
+  id: string;
+  name: string;
+  name_fr?: string;
+  name_ar?: string;
+  conceptId: string;
+  system: SystemId;
+  chunk: number;
+  positions: number;
+  normals: number;
+  indices: number;
+  vertexCount: number;
+  indexCount: number;
+  bounds: [number[], number[]];
+}
+
+export interface Concept {
+  id: string;
+  name: string;
+  name_fr?: string;
+  name_ar?: string;
+  elements: string[];
+}
+
+export interface Atlas {
+  version: string;
+  sex?: 'male';
+  source?: string;
+  scope?: string;
+  parts: Part[];
+  concepts: Concept[];
+  chunks: { url: string; bytes: number; gzip?: string; gzipBytes?: number }[];
+  triangles: number;
+}
+
 export type View = 'three-quarter'|'front'|'back'|'side';
-export interface SceneState {inspectorOpen?:boolean;explode:number;visible:SystemId[];selected:string[];isolate:boolean;view:View;rotate:boolean;reset:number}
-export const DEFAULT_VISIBLE:SystemId[] = ['cardiac','sensory','skeletal','muscular','arterial','venous','nervous','respiratory','digestive','urinary','lymphatic','endocrine','reproductive','connective'];
-export const EXPLANATIONS:Record<string,string> = {
- 'heart':'A muscular pump in the chest. Its right side sends blood to the lungs; its left side sends blood through the systemic circulation.',
- 'liver':'A large organ beneath the right side of the diaphragm. It processes absorbed nutrients, produces bile, and synthesizes many proteins carried in the blood.',
- 'brain':'The central organ of the nervous system. Its interconnected regions support perception, movement, memory, language, and the regulation of bodily functions.',
- 'stomach':'A muscular chamber between the esophagus and small intestine. It stores and mixes food with acid and enzymes before releasing it into the duodenum.',
- 'spleen':'A lymphoid organ in the upper left abdomen. It filters blood, removes aging blood cells, and participates in immune responses.',
- 'pancreas':'An abdominal organ with digestive and endocrine roles. It supplies enzymes to the small intestine and releases hormones including insulin and glucagon.',
- 'urinary bladder':'A muscular reservoir in the pelvis that stores urine arriving from the kidneys through the ureters.',
- 'trachea':'The main airway connecting the larynx to the bronchi. Its cartilage supports keep the airway open during breathing.',
- 'diaphragm':'A broad muscle separating the chest and abdomen. When it contracts, it increases chest volume and helps draw air into the lungs.',
-};
-export function explanation(name:string,system:SystemId){return EXPLANATIONS[name.toLowerCase()] ?? SYSTEMS.find(s=>s.id===system)?.description ?? '';}
+export interface SceneState {
+  inspectorOpen?: boolean;
+  explode: number;
+  visible: SystemId[];
+  selected: string[];
+  isolate: boolean;
+  view: View;
+  rotate: boolean;
+  reset: number;
+  lang?: Lang;
+}
+
+export const DEFAULT_VISIBLE: SystemId[] = ['cardiac','sensory','skeletal','muscular','arterial','venous','nervous','respiratory','digestive','urinary','lymphatic','endocrine','reproductive','connective'];
+
+export function getAnatomicalName(
+  item: { name: string; name_fr?: string; name_ar?: string } | null | undefined,
+  lang: Lang
+): string {
+  if (!item) return '';
+  if (lang === 'ar' && item.name_ar) return item.name_ar;
+  if (lang === 'fr' && item.name_fr) return item.name_fr;
+  return item.name || '';
+}
+
+export function explanation(name: string, system: SystemId, lang: Lang = 'en'): string {
+  const key = name.toLowerCase();
+  const expl = EXPLANATION_TRANSLATIONS[key];
+  if (expl && expl[lang]) {
+    return expl[lang];
+  }
+  const sys = SYSTEM_TRANSLATIONS[system];
+  if (sys && sys[lang]) {
+    return sys[lang].desc;
+  }
+  return SYSTEMS.find(s => s.id === system)?.description ?? '';
+}

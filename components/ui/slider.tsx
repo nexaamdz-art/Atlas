@@ -1,6 +1,11 @@
 import { Slider as SliderPrimitive } from '@base-ui/react/slider';
+import { DirectionProvider } from '@base-ui/react/direction-provider';
 
 import { cn } from '@/lib/utils';
+
+interface SliderProps extends SliderPrimitive.Root.Props {
+  dir?: 'ltr' | 'rtl';
+}
 
 function Slider({
   className,
@@ -8,15 +13,16 @@ function Slider({
   value,
   min = 0,
   max = 100,
+  dir,
   ...props
-}: SliderPrimitive.Root.Props) {
+}: SliderProps) {
   const _values = Array.isArray(value)
     ? value
     : Array.isArray(defaultValue)
       ? defaultValue
       : [min, max];
 
-  return (
+  const element = (
     <SliderPrimitive.Root
       className={cn('data-horizontal:w-full data-vertical:h-full', className)}
       data-slot="slider"
@@ -47,6 +53,12 @@ function Slider({
       </SliderPrimitive.Control>
     </SliderPrimitive.Root>
   );
+
+  if (dir) {
+    return <DirectionProvider direction={dir}>{element}</DirectionProvider>;
+  }
+
+  return element;
 }
 
 export { Slider };

@@ -1,15 +1,16 @@
 import {flushSync} from 'react-dom';
 import {registerAtlasTools} from './agent-tools';
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {Activity,ArrowUpRight,ChevronRight,Focus,Info,Layers3,Pause,RotateCcw,RotateCw,Search,X} from 'lucide-react';
+import {Activity,ArrowUpRight,ChevronRight,Focus,Info,Layers3,Maximize,Minimize,Pause,RotateCcw,RotateCw,Search,X} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
 import {Slider} from '@/components/ui/slider';
 import {Switch} from '@/components/ui/switch';
 import {Sheet,SheetContent,SheetTitle,SheetDescription} from '@/components/ui/sheet';
 import {Combobox,ComboboxInput,ComboboxContent,ComboboxList,ComboboxItem,ComboboxEmpty} from '@/components/ui/combobox';
+import {DirectionProvider} from '@base-ui/react/direction-provider';
 import AnatomyScene from './scene';
-import {DEFAULT_VISIBLE,SYSTEMS,type Atlas,type Concept,type SceneState,type SystemId,type View} from './anatomy';
+import {DEFAULT_VISIBLE,SYSTEMS,getAnatomicalName,type Atlas,type Concept,type SceneState,type SystemId,type View} from './anatomy';
 import {TRANSLATIONS,SYSTEM_TRANSLATIONS,EXPLANATION_TRANSLATIONS,type Lang} from './i18n';
 
 const initial:SceneState={explode:0,visible:DEFAULT_VISIBLE,selected:[],isolate:false,view:'three-quarter',rotate:false,reset:0};
@@ -26,6 +27,21 @@ export default function Home(){
  const [about,setAbout]=useState(false);
  const [query,setQuery]=useState('');
  const [chosen,setChosen]=useState<Concept|null>(null);
+ const [isFullscreen,setIsFullscreen]=useState(false);
+
+ useEffect(()=>{
+  const handleFsChange=()=>setIsFullscreen(Boolean(document.fullscreenElement));
+  document.addEventListener('fullscreenchange',handleFsChange);
+  return()=>document.removeEventListener('fullscreenchange',handleFsChange);
+ },[]);
+
+ const toggleFullscreen=()=>{
+  if(!document.fullscreenElement){
+   document.documentElement.requestFullscreen().catch(()=>{});
+  }else{
+   document.exitFullscreen().catch(()=>{});
+  }
+ };
 
  const t=TRANSLATIONS[lang];
 
@@ -65,9 +81,29 @@ export default function Home(){
  const results=useMemo(()=>{
   if(!atlas)return[];
   const term=query.toLowerCase().trim();
-  if(!term)return ['heart','brain','liver','stomach','spleen','pancreas','urinary bladder','trachea'].map(name=>atlas.concepts.find(c=>c.name.toLowerCase()===name)).filter((x):x is Concept=>!!x);
-  return atlas.concepts.filter(c=>c.name.toLowerCase().includes(term)||c.id.toLowerCase().includes(term)).sort((a,b)=>a.name.length-b.name.length).slice(0,80);
- },[atlas,query]);
+  if(!term){
+   return ['heart','brain','liver','stomach','spleen','pancreas','urinary bladder','trachea']
+     .map(name=>atlas.concepts.find(c=>c.name.toLowerCase()===name))
+     .filter((x):x is Concept=>!!x);
+  }
+  return atlas.concepts
+   .filter(c=>
+     c.name.toLowerCase().includes(term) ||
+     (c.name_fr && c.name_fr.toLowerCase().includes(term)) ||
+     (c.name_ar && c.name_ar.includes(term)) ||
+     c.id.toLowerCase().includes(term)
+   )
+   .sort((a,b)=>{
+     const nameA = getAnatomicalName(a, lang).toLowerCase();
+     const nameB = getAnatomicalName(b, lang).toLowerCase();
+     const matchA = nameA.startsWith(term);
+     const matchB = nameB.startsWith(term);
+     if(matchA && !matchB) return -1;
+     if(!matchA && matchB) return 1;
+     return nameA.length - nameB.length;
+   })
+   .slice(0,80);
+ },[atlas,query,lang]);
 
  const choose=(c:Concept)=>{
   setChosen(c);
@@ -84,7 +120,7 @@ export default function Home(){
  const choosePart=(id:string)=>{
   const p=parts.get(id);
   if(!p)return;
-  setChosen({id:p.conceptId,name:p.name,elements:[id]});
+  setChosen({id:p.conceptId,name:p.name,name_fr:p.name_fr,name_ar:p.name_ar,elements:[id]});
   setState(s=>({...s,selected:[id],isolate:false,rotate:false}));
   setDetails(true);
   setPanel(null);
@@ -120,32 +156,121 @@ export default function Home(){
  };
 
  return (
-  <main className="studio" dir={lang==='ar'?'rtl':'ltr'}>
-   {atlas&&<AnatomyScene atlas={atlas} state={{...state,inspectorOpen:details&&selectedParts.length>0}} onSelect={choosePart} onProgress={n=>{setProgress(n);if(n===100)setError('');}} onError={setError}/>}
+  <DirectionProvider direction={lang==='ar'?'rtl':'ltr'}>
+   <main className="studio" dir={lang==='ar'?'rtl':'ltr'}>
+   {atlas&&<AnatomyScene atlas={atlas} state={{...state,lang,inspectorOpen:details&&selectedParts.length>0}} onSelect={choosePart} onProgress={n=>{setProgress(n);if(n===100)setError('');}} onError={setError}/>}
    <div className="vignette"/>
    
-   <header className="identity">
-    <h1>{t.appTitle}</h1>
-    <div className="identity-meta">{atlas?atlas.parts.length.toLocaleString():'2,234'} {t.modeledPieces} <span>·</span> {t.sourceCredit}</div>
+   <header className="studio-header">
+    <div className="header-identity">
+     <div className="header-title">{t.appTitle}</div>
+     <div className="header-meta">{atlas?atlas.parts.length.toLocaleString():'2,234'} {t.modeledPieces} <span>·</span> {t.sourceCredit}</div>
+    </div>
+
+    <div className="atlas-logo-anchor">
+     <div className="atlas-logo-badge">
+      <svg className="atlas-logo-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+       <circle cx="12" cy="12" r="10"/>
+       <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+       <path d="M2 12h20"/>
+      </svg>
+      <span className="atlas-logo-text">ATLAS</span>
+      <span className="atlas-logo-dot"/>
+     </div>
+    </div>
+
+    <div className="header-languages">
+     <div className="lang-group">
+      {(['en','fr','ar'] as Lang[]).map(l=>(
+       <button
+        key={l}
+        onClick={()=>setLang(l)}
+        className={`lang-btn ${lang===l?'active':''}`}
+        aria-label={`Switch to ${l.toUpperCase()}`}
+        aria-pressed={lang===l}
+       >
+        {l.toUpperCase()}
+       </button>
+      ))}
+     </div>
+    </div>
    </header>
 
-   <nav className="top-actions" aria-label="Explorer panels">
-    <div className="flex items-center gap-1 bg-[#22252a] p-1 rounded-lg border border-white/10">
-     {(['en','fr','ar'] as Lang[]).map(l=>(
-      <button key={l} onClick={()=>setLang(l)} className={`px-2.5 py-1 text-xs font-medium rounded transition-colors uppercase ${lang===l?'bg-[#ffb703] text-[#1a1a1a]':'text-[#9ca3af] hover:text-white'}`}>
-       {l}
-      </button>
+   <aside className="unified-control-panel glass" role="toolbar" aria-label="Controls and search">
+    <Button
+     variant="ghost"
+     className={`unified-search-btn ${panel==='search'?'active':''}`}
+     onClick={()=>openPanel('search')}
+     aria-label={t.findStructure}
+     title={`${t.findStructure} ( / )`}
+    >
+     <Search size={16}/>
+     <span className="search-label">{t.findStructure}</span>
+     <kbd className="search-kbd">/</kbd>
+    </Button>
+
+    <div className="panel-divider" aria-hidden="true"/>
+
+    <div className="view-preset-group" role="group" aria-label="Camera angles">
+     {(['three-quarter','front','side','back'] as View[]).map((v,i)=>(
+      <Button
+       variant="ghost"
+       key={v}
+       className={`unified-tool-btn ${state.view===v?'active':''}`}
+       aria-pressed={state.view===v}
+       disabled={state.explode>.8&&v!=='front'}
+       onClick={()=>setState(s=>({...s,view:v,reset:s.reset+1,rotate:false}))}
+       title={[t.viewThreeQuarter,t.viewFront,t.viewSide,t.viewBack][i]}
+       aria-label={[t.viewThreeQuarter,t.viewFront,t.viewSide,t.viewBack][i]}
+      >
+       <span>{['¾','F','S','B'][i]}</span>
+      </Button>
      ))}
     </div>
-    <Button variant="ghost" className={panel==='search'?'active':''} onClick={()=>openPanel('search')} aria-label={t.findStructure}>
-     <Search size={18}/>
-     <span className="hidden sm:inline">{t.findStructure}</span>
-     <kbd className="hidden sm:inline">/</kbd>
+
+    <div className="panel-divider" aria-hidden="true"/>
+
+    <Button
+     variant="ghost"
+     disabled={state.explode>=.4}
+     aria-label={state.rotate?t.pauseRotation:t.rotateBody}
+     title={state.rotate?t.pauseRotation:t.rotateBody}
+     className={`unified-tool-btn ${state.rotate?'active':''}`}
+     onClick={()=>setState(s=>({...s,rotate:!s.rotate}))}
+    >
+     {state.rotate?<Pause size={16}/>:<RotateCw size={16}/>}
     </Button>
-    <Button variant="ghost" className="icon-button" aria-label={t.aboutAtlas} onClick={()=>{setDetails(false);setPanel(null);setAbout(true);}}>
-     <Info size={18}/>
+
+    <Button
+     variant="ghost"
+     className="unified-tool-btn"
+     aria-label={t.reset}
+     title={t.reset}
+     onClick={reset}
+    >
+     <RotateCcw size={16}/>
     </Button>
-   </nav>
+
+    <Button
+     variant="ghost"
+     className={`unified-tool-btn ${isFullscreen?'active':''}`}
+     aria-label={isFullscreen?t.exitFullscreen:t.fullscreen}
+     title={isFullscreen?t.exitFullscreen:t.fullscreen}
+     onClick={toggleFullscreen}
+    >
+     {isFullscreen?<Minimize size={16}/>:<Maximize size={16}/>}
+    </Button>
+
+    <Button
+     variant="ghost"
+     className="unified-tool-btn"
+     aria-label={t.aboutAtlas}
+     title={t.aboutAtlas}
+     onClick={()=>{setDetails(false);setPanel(null);setAbout(true);}}
+    >
+     <Info size={16}/>
+    </Button>
+   </aside>
 
    <section className={`layers-panel glass ${panel==='layers'?'mobile-open':''}`} aria-label="Anatomical layers">
     <div className="panel-heading">
@@ -182,14 +307,14 @@ export default function Home(){
       <span>{t.findStructure}</span>
       <Button variant="ghost" className="icon-button" onClick={()=>setPanel(null)} aria-label="Close search"><X size={18}/></Button>
      </div>
-     <Combobox<Concept> items={results} value={null} onValueChange={value=>{if(value)choose(value);}} inputValue={query} onInputValueChange={setQuery} itemToStringLabel={c=>c.name} filter={null} open onOpenChange={open=>{if(!open)setPanel(null);}}>
+     <Combobox<Concept> items={results} value={null} onValueChange={value=>{if(value)choose(value);}} inputValue={query} onInputValueChange={setQuery} itemToStringLabel={c=>getAnatomicalName(c,lang)} filter={null} open onOpenChange={open=>{if(!open)setPanel(null);}}>
       <ComboboxInput autoFocus placeholder={t.searchPlaceholder} aria-label={t.searchPlaceholder} showTrigger={false}/>
       <ComboboxContent className="anatomy-search-results">
        <ComboboxEmpty>{t.noResults}</ComboboxEmpty>
        <ComboboxList>
         {(c:Concept)=>(
          <ComboboxItem key={c.id} value={c}>
-          <span className="search-result-name">{c.name}</span>
+          <span className="search-result-name">{getAnatomicalName(c,lang)}</span>
           <span className="small-number">{c.elements.length} {c.elements.length===1?t.piece:t.pieces}</span>
          </ComboboxItem>
         )}
@@ -200,22 +325,10 @@ export default function Home(){
     </section>
    )}
 
-   <nav className="view-controls glass" aria-label="Camera controls">
-    {(['three-quarter','front','side','back'] as View[]).map((v,i)=>(
-     <Button variant="ghost" key={v} className={state.view===v?'active':''} aria-pressed={state.view===v} disabled={state.explode>.8&&v!=='front'} onClick={()=>setState(s=>({...s,view:v,reset:s.reset+1,rotate:false}))} title={[t.viewThreeQuarter,t.viewFront,t.viewSide,t.viewBack][i]} aria-label={[t.viewThreeQuarter,t.viewFront,t.viewSide,t.viewBack][i]}>
-      <span>{['¾','F','S','B'][i]}</span>
-     </Button>
-    ))}
-    <i/>
-    <Button variant="ghost" disabled={state.explode>=.4} aria-label={state.rotate?t.pauseRotation:t.rotateBody} title={state.rotate?t.pauseRotation:t.rotateBody} className={state.rotate?'active':''} onClick={()=>setState(s=>({...s,rotate:!s.rotate}))}>
-     {state.rotate?<Pause size={17}/>:<RotateCw size={18}/>}
-    </Button>
-    <Button variant="ghost" aria-label={t.reset} title={t.reset} onClick={reset}><RotateCcw size={17}/></Button>
-   </nav>
 
    <div className="scene-caption">
     <span className="caption-line"/>
-    <span>{state.isolate?(chosen?.name??(lang==='ar'?'الهيكل المحدد':lang==='fr'?'STRUCTURE SÉLECTIONNÉE':'SELECTED STRUCTURE')):state.explode>.95?(lang==='ar'?'المخزون التشريحي':lang==='fr'?'INVENTAIRE ANATOMIQUE':'ANATOMICAL INVENTORY'):state.explode>.05?(lang==='ar'?'الهياكل المفككة':lang==='fr'?'STRUCTURES SÉPARÉES':'SEPARATED STRUCTURES'):(lang==='ar'?'الإنسان البالغ · ذكر':lang==='fr'?'ADULTE HUMAIN · HOMME':'ADULT HUMAN · MALE')}</span>
+    <span>{state.isolate?(chosen?getAnatomicalName(chosen,lang):(lang==='ar'?'الهيكل المحدد':lang==='fr'?'STRUCTURE SÉLECTIONNÉE':'SELECTED STRUCTURE')):state.explode>.95?(lang==='ar'?'المخزون التشريحي':lang==='fr'?'INVENTAIRE ANATOMIQUE':'ANATOMICAL INVENTORY'):state.explode>.05?(lang==='ar'?'الهياكل المفككة':lang==='fr'?'STRUCTURES SÉPARÉES':'SEPARATED STRUCTURES'):(lang==='ar'?'الإنسان البالغ · ذكر':lang==='fr'?'ADULTE HUMAIN · HOMME':'ADULT HUMAN · MALE')}</span>
     <span className="caption-line"/>
    </div>
 
@@ -227,9 +340,9 @@ export default function Home(){
     <div className="explode-control">
      <div className="explode-label">
       <label id="explode-label">{t.explodeAnatomy}</label>
-      <output>{Math.round(state.explode*100)}<span>%</span></output>
+      <output dir="ltr">{Math.round(state.explode*100)}<span>%</span></output>
      </div>
-     <Slider aria-labelledby="explode-label" min={0} max={100} step={1} value={[state.explode*100]} onValueChange={v=>setState(s=>({...s,explode:(Array.isArray(v)?v[0]:v)/100,view:(Array.isArray(v)?v[0]:v)>80?'front':s.view,rotate:false}))}/>
+     <Slider dir={lang==='ar'?'rtl':'ltr'} aria-labelledby="explode-label" min={0} max={100} step={1} value={[state.explode*100]} onValueChange={v=>setState(s=>({...s,explode:(Array.isArray(v)?v[0]:v)/100,view:(Array.isArray(v)?v[0]:v)>80?'front':s.view,rotate:false}))}/>
      <div className="slider-endpoints">
       <span>{t.assembled}</span>
       <span>{t.everyPiece}</span>
@@ -268,8 +381,8 @@ export default function Home(){
     <SheetContent initialFocus={detailTitle} className={`detail-sheet glass ${state.isolate?'is-isolated':''}`} showCloseButton={true}>
      <div className="detail-header">
       <div className="detail-accent" style={{background:system?.color}}/>
-      <div className="eyebrow">{system?getSystemName(system.id):(lang==='ar'?'التشريح':'ANATOMY')}</div>
-      <SheetTitle ref={detailTitle} tabIndex={-1} className="structure-title">{chosen?.name}</SheetTitle>
+      <div className="eyebrow">{system?getSystemName(system.id):(lang==='ar'?'التشريح':lang==='fr'?'ANATOMIE':'ANATOMY')}</div>
+      <SheetTitle ref={detailTitle} tabIndex={-1} className="structure-title">{chosen?getAnatomicalName(chosen,lang):''}</SheetTitle>
      </div>
      <div className="detail-scroll" key={`${chosen?.id}-${state.isolate}`}>
       <SheetDescription className="structure-description">
@@ -284,7 +397,7 @@ export default function Home(){
         <h3>{t.includedStructures}</h3>
         {selectedParts.slice(0,50).map(p=>(
          <Button variant="ghost" key={p.id} onClick={()=>choosePart(p.id)}>
-          <span>{p.name}</span>
+          <span>{getAnatomicalName(p,lang)}</span>
           <ChevronRight size={14} className={lang==='ar'?'rotate-180':''}/>
          </Button>
         ))}
@@ -326,5 +439,6 @@ export default function Home(){
     </SheetContent>
    </Sheet>
   </main>
+ </DirectionProvider>
  );
 }
