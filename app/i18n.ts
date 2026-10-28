@@ -56,6 +56,11 @@ export const TRANSLATIONS = {
     datasetLicense: 'Dataset license',
     originalGeometry: 'Original geometry & metadata',
     sourcePublication: 'Read the source publication',
+    welcome: 'WELCOME',
+    welcomeSubtitle: 'Human Anatomy Atlas 3D',
+    enterAtlas: 'ENTER ATLAS',
+    welcomeReady: 'Anatomical Model Ready',
+    clickToExplore: 'Click to explore the anatomy',
   },
   fr: {
     appTitle: 'Atlas',
@@ -112,6 +117,11 @@ export const TRANSLATIONS = {
     datasetLicense: 'Licence du jeu de données',
     originalGeometry: 'Géométrie d’origine et métadonnées',
     sourcePublication: 'Lire la publication source',
+    welcome: 'WELCOME',
+    welcomeSubtitle: 'Atlas Anatomique Humain 3D',
+    enterAtlas: 'ENTRER DANS L’ATLAS',
+    welcomeReady: 'Modèle anatomique prêt',
+    clickToExplore: 'Cliquez pour explorer l’anatomie',
   },
   ar: {
     appTitle: 'أطلس',
@@ -168,6 +178,11 @@ export const TRANSLATIONS = {
     datasetLicense: 'ترخيص مجموعة البيانات',
     originalGeometry: 'الهندسة الأصلية والبيانات الوصفية',
     sourcePublication: 'قراءة المنشور المصدر',
+    welcome: 'WELCOME',
+    welcomeSubtitle: 'أطلس التشريح البشري ثلاثي الأبعاد',
+    enterAtlas: 'دخول الأطلس',
+    welcomeReady: 'النموذج التشريحي جاهز للاستكشاف',
+    clickToExplore: 'انقر للبدء واستكشاف التشريح',
   }
 };
 

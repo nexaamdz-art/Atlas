@@ -21,6 +21,7 @@ export default function Home(){
  const [atlas,setAtlas]=useState<Atlas|null>(null);
  const [state,setState]=useState(initial);
  const [progress,setProgress]=useState(0);
+ const [hasEntered,setHasEntered]=useState(false);
  const [error,setError]=useState('');
  const [panel,setPanel]=useState<'layers'|'search'|null>(null);
  const [details,setDetails]=useState(false);
@@ -34,6 +35,19 @@ export default function Home(){
   document.addEventListener('fullscreenchange',handleFsChange);
   return()=>document.removeEventListener('fullscreenchange',handleFsChange);
  },[]);
+
+ useEffect(()=>{
+  const handleKeyDown=(e:KeyboardEvent)=>{
+   if(!hasEntered&&progress>=100&&(e.key==='Enter'||e.key===' ')){
+    if(!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement)){
+     e.preventDefault();
+     setHasEntered(true);
+    }
+   }
+  };
+  window.addEventListener('keydown',handleKeyDown);
+  return()=>window.removeEventListener('keydown',handleKeyDown);
+ },[hasEntered,progress]);
 
  const toggleFullscreen=()=>{
   if(!document.fullscreenElement){
@@ -168,7 +182,12 @@ export default function Home(){
     </div>
 
     <div className="atlas-logo-anchor">
-     <div className="atlas-logo-badge">
+     <button
+      className="atlas-logo-badge"
+      onClick={()=>setHasEntered(false)}
+      title="Atlas"
+      aria-label="Atlas"
+     >
       <svg className="atlas-logo-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
        <circle cx="12" cy="12" r="10"/>
        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
@@ -176,7 +195,7 @@ export default function Home(){
       </svg>
       <span className="atlas-logo-text">ATLAS</span>
       <span className="atlas-logo-dot"/>
-     </div>
+     </button>
     </div>
 
     <div className="header-languages">
@@ -359,7 +378,7 @@ export default function Home(){
     <Button variant="ghost" onClick={()=>{setDetails(false);setPanel(null);setAbout(true);}}>{t.sourceCreditsBtn} <ArrowUpRight size={12}/></Button>
    </footer>
 
-   {progress<100&&!error&&(
+   {hasEntered&&progress<100&&!error&&(
     <div className="loading glass" role="status">
      <Activity size={18}/>
      <div>
@@ -370,7 +389,7 @@ export default function Home(){
     </div>
    )}
 
-   {error&&(
+   {hasEntered&&error&&(
     <div className="loading glass error" role="alert">
      <p>{error}</p>
      <Button variant="ghost" onClick={()=>location.reload()}>{t.reloadViewer}</Button>
@@ -438,6 +457,37 @@ export default function Home(){
      </div>
     </SheetContent>
    </Sheet>
+
+   {/* Welcome Screen with Background Image */}
+   <div
+    className={`welcome-screen ${hasEntered ? 'is-entered' : ''} cursor-pointer`}
+    aria-hidden={hasEntered}
+    dir={lang === 'ar' ? 'rtl' : 'ltr'}
+    role="button"
+    tabIndex={0}
+    aria-label={t.welcome}
+    onClick={() => setHasEntered(true)}
+    onKeyDown={e => {
+     if (e.key === 'Enter' || e.key === ' ') {
+      setHasEntered(true);
+     }
+    }}
+   >
+    <img
+     src="/welcome-bg.jpg"
+     alt="Welcome Background"
+     className="welcome-bg-img"
+     onError={e => {
+      (e.currentTarget as HTMLImageElement).src = '/assets/aistudio/1793220647882_eab812a9.jpg';
+     }}
+    />
+
+    {/* Center Welcome in Pacifico */}
+    <div className="welcome-center">
+     <h1 className="welcome-pacifico-text">Welcome</h1>
+     <div className="welcome-pacifico-line" />
+    </div>
+   </div>
   </main>
  </DirectionProvider>
  );
