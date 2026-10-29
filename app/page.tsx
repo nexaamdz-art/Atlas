@@ -473,14 +473,17 @@ export default function Home(){
      }
     }}
    >
-    <img
-     src="/welcome-bg.jpg"
-     alt="Welcome Background"
-     className="welcome-bg-img"
-     onError={e => {
-      (e.currentTarget as HTMLImageElement).src = '/assets/aistudio/1793220647882_eab812a9.jpg';
-     }}
-    />
+    <picture className="welcome-bg-picture">
+     <source media="(orientation: portrait), (max-width: 768px)" srcSet="/welcome-bg-mobile.jpg" />
+     <img
+      src="/welcome-bg.jpg"
+      alt="Welcome Background"
+      className="welcome-bg-img"
+      onError={e => {
+       (e.currentTarget as HTMLImageElement).src = '/assets/aistudio/1793220647882_eab812a9.jpg';
+      }}
+     />
+    </picture>
 
     {/* Center Welcome in Pacifico */}
     <div className="welcome-center">
