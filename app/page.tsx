@@ -49,6 +49,15 @@ export default function Home(){
   return()=>window.removeEventListener('keydown',handleKeyDown);
  },[hasEntered,progress]);
 
+ useEffect(()=>{
+  if(progress>=100&&!hasEntered){
+   const timer=setTimeout(()=>{
+    setHasEntered(true);
+   },450);
+   return()=>clearTimeout(timer);
+  }
+ },[progress,hasEntered]);
+
  const toggleFullscreen=()=>{
   if(!document.fullscreenElement){
    document.documentElement.requestFullscreen().catch(()=>{});
@@ -378,16 +387,6 @@ export default function Home(){
     <Button variant="ghost" onClick={()=>{setDetails(false);setPanel(null);setAbout(true);}}>{t.sourceCreditsBtn} <ArrowUpRight size={12}/></Button>
    </footer>
 
-   {hasEntered&&progress<100&&!error&&(
-    <div className="loading glass" role="status">
-     <Activity size={18}/>
-     <div>
-      <strong>{t.preparingAnatomy}</strong>
-      <span>{t.loadingPiece(progress, atlas?.parts.length.toLocaleString()??'2,234')}</span>
-      <div className="loading-track"><i style={{width:`${progress}%`}}/></div>
-     </div>
-    </div>
-   )}
 
    {hasEntered&&error&&(
     <div className="loading glass error" role="alert">
@@ -485,10 +484,15 @@ export default function Home(){
      />
     </picture>
 
-    {/* Center Welcome in Pacifico */}
+    {/* Center Welcome in Pacifico with dynamic loading line */}
     <div className="welcome-center">
      <h1 className="welcome-pacifico-text">Welcome</h1>
-     <div className="welcome-pacifico-line" />
+     <div className="welcome-loading-line-track" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Loading progress">
+      <div
+       className="welcome-loading-line-fill"
+       style={{ width: `${Math.max(4, Math.min(100, progress))}%` }}
+      />
+     </div>
     </div>
    </div>
   </main>
